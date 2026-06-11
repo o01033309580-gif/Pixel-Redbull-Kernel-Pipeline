@@ -192,12 +192,27 @@ jobs:
       #     curl -LSs "https://raw.githubusercontent.com/SukiSU-Ultra/SukiSU-Ultra/main/kernel/setup.sh" | bash -s builtin
 
 
+      # Must run BEFORE the SUSFS kernel patch: 50_add_susfs_in_kernel-4.19.patch
+      # modifies fs/notify/fdinfo.c and calls inotify_mark_user_mask(), a helper
+      # that only exists on android13/14 4.19 upstream. On android12 4.19 we must
+      # backport it first, otherwise the SUSFS fdinfo.c hunk has no matching
+      # context and the build breaks.
+      - name: Apply inotify mask patch (Android 12 + KernelSU-Next prerequisite)
+        if: ${{ github.event.inputs.susfs_enable == 'true' && github.event.inputs.kernel_root == 'kernelSU-next' && github.event.inputs.android_version == 'android-msm-redbull-4.19-android12' }}
+        run: |
+          echo "Changing to configuration directory: $CONFIG..."
+          cd "$CONFIG/private/msm-google/"
+
+          echo "Applying inotify mask flags patch (prerequisite for SUSFS on Android 12)..."
+          cp ../../../kernel_patches/inotify-show-inotify-mask-flags-in-proc-fdinfo.patch ./
+          patch -p1 --fuzz=3 < ./inotify-show-inotify-mask-flags-in-proc-fdinfo.patch
+
       - name: Apply SUSFS Patches
         if: ${{ github.event.inputs.susfs_enable == 'true' && (github.event.inputs.kernel_root == 'kernelSU-Next' || github.event.inputs.kernel_root == 'kernelSU') }}
         run: |
           echo "Changing to configuration directory: $CONFIG..."
           cd "$CONFIG/private/msm-google/"
-          
+
           echo "Applying SUSFS patches..."
           
           # Copy SUSFS patches
@@ -233,7 +248,7 @@ jobs:
           elif [ "$KERNEL_ROOT" = "kernelSU-next" ]; then
             cp ../../../kernel_patches/ksun_hooks_4.19.patch ./
             patch -p1 --fuzz=3 < ./ksun_hooks_4.19.patch
-          fi 
+          fi
 
       - name: Add Configuration Settings KSU
         if: ${{ github.event.inputs.kernel_root == 'kernelSU-Next' || github.event.inputs.kernel_root == 'kernelSU' }}
