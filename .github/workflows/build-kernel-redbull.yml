@@ -317,10 +317,19 @@ jobs:
           echo "CONFIG_UPROBES=y" >> ./arch/arm64/configs/redbull-gki_defconfig
           echo "CONFIG_UPROBE_EVENTS=y" >> ./arch/arm64/configs/redbull-gki_defconfig
 
-          # BTF for CO-RE (requires pahole / dwarves installed in deps step)
-          echo "CONFIG_DEBUG_INFO=y" >> ./arch/arm64/configs/redbull-gki_defconfig
-          echo "CONFIG_DEBUG_INFO_DWARF4=y" >> ./arch/arm64/configs/redbull-gki_defconfig
-          echo "CONFIG_DEBUG_INFO_BTF=y" >> ./arch/arm64/configs/redbull-gki_defconfig
+          # NOTE: BTF (CONFIG_DEBUG_INFO_BTF) is intentionally NOT enabled here.
+          # In-kernel BTF generation is fragile on this 4.19 GKI tree and can
+          # break the build (see libbpf#423). BTF for CO-RE will instead be
+          # produced post-build with pahole from vmlinux as a separate step.
+
+      - name: Debug - inspect base defconfig (KPROBES override check)
+        run: |
+          cd "$CONFIG/private/msm-google/"
+          echo "=== All KPROBES/UPROBES/BPF lines in redbull-gki_defconfig (in file order) ==="
+          grep -nE "KPROBES|UPROBES|CONFIG_BPF|FTRACE_SYSCALLS" ./arch/arm64/configs/redbull-gki_defconfig || echo "(none found)"
+          echo ""
+          echo "NOTE: the appended '=y' lines are at the bottom; later lines win over"
+          echo "an earlier '# CONFIG_KPROBES is not set'. Final truth is the .config below."
 
       # - name: Add Configuration Settings KSU
       #   if: ${{ github.event.inputs.kernel_root == 'SukiSU' }}
@@ -363,6 +372,15 @@ jobs:
           
           echo "Building the kernel..."
           BUILD_AOSP_KERNEL=1 ./build_redbull-gki.sh
+
+      - name: Verify final .config (KPROBES/UPROBES/BPF actually enabled)
+        run: |
+          cd "$CONFIG"
+          CFG=$(find out -name ".config" -path "*msm-google*" | head -n 1)
+          [ -z "$CFG" ] && CFG=$(find out -name ".config" | head -n 1)
+          echo "Using final config: $CFG"
+          echo "=== Effective KPROBES/UPROBES/BPF/FTRACE_SYSCALLS in final .config ==="
+          grep -nE "KPROBES|UPROBES|CONFIG_BPF|FTRACE_SYSCALLS" "$CFG" || echo "(none found)"
           
       - name: Create zip file for result
         run: |
