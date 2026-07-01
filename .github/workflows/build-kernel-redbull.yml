@@ -358,8 +358,8 @@ jobs:
           sed -i 's/check_defconfig//' ./build.config.common
           sed -i 's/check_defconfig//' ./build.config.redbull
           sed -i 's/check_defconfig && //' ./build.config.redbull.no-cfi
-          # Added commit id
-          sed -i '$s|echo "\$res"|echo "\-g7b0944645172-@sn00py_z0r0-$GITHUB_SHA_SHORT"|' ./scripts/setlocalversion
+          # Added commit id without explicit author strings for stealth
+          sed -i '$s|echo "\$res"|echo "\-$GITHUB_SHA_SHORT"|' ./scripts/setlocalversion
           sed -i 's/-stable//' ./scripts/setlocalversion
           
           # Run perl command to modify UTS_VERSION
