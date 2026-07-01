@@ -385,7 +385,7 @@ jobs:
       - name: Build camhook LKM
         run: |
           echo "Building camhook module..."
-          cp -r ../camhook $CONFIG/private/msm-google/drivers/
+          cp -r camhook $CONFIG/private/msm-google/drivers/
           cd "$CONFIG/private/msm-google/"
           make O=../../out/android-msm-pixel-4.19/private/msm-google M=drivers/camhook modules ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- CC=clang
           cp drivers/camhook/cam_v4l2_hook.ko ../../out/android-msm-pixel-4.19/dist/ || true
