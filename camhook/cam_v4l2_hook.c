@@ -144,7 +144,6 @@ static int hook_dqbuf(struct file* f, void* fh, struct v4l2_buffer* buf) {
 
 static int __init camhook_init(void) {
     int i;
-    struct file *f;
     struct video_device *vdev;
     char path[32];
 
