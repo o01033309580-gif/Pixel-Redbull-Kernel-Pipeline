@@ -370,6 +370,10 @@ jobs:
           echo "Changing to configuration directory: $CONFIG..."
           cd "$CONFIG"
           
+          echo "Injecting camhook module into kernel tree..."
+          cp -r ../camhook private/msm-google/drivers/
+          echo 'obj-m += camhook/' >> private/msm-google/drivers/Makefile
+          
           echo "Building the kernel..."
           BUILD_AOSP_KERNEL=1 ./build_redbull-gki.sh
 
@@ -382,13 +386,6 @@ jobs:
           echo "=== Effective KPROBES/UPROBES/BPF/FTRACE_SYSCALLS in final .config ==="
           grep -nE "KPROBES|UPROBES|CONFIG_BPF|FTRACE_SYSCALLS" "$CFG" || echo "(none found)"
           
-      - name: Build camhook LKM
-        run: |
-          echo "Building camhook module..."
-          cp -r camhook $CONFIG/private/msm-google/drivers/
-          cd "$CONFIG/private/msm-google/"
-          make O=../../out/android-msm-pixel-4.19/private/msm-google M=drivers/camhook modules ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- CC=clang
-          cp drivers/camhook/cam_v4l2_hook.ko ../../out/android-msm-pixel-4.19/dist/ || true
 
       - name: Create zip file for result
         run: |
@@ -398,7 +395,7 @@ jobs:
           cp -r ./out/android-msm-pixel-4.19/dist/boot.img fastboot_files/
           cp -r ./out/android-msm-pixel-4.19/dist/vendor_boot.img fastboot_files/
           cp -r ./out/android-msm-pixel-4.19/dist/dtbo.img fastboot_files/
-          cp -r ./out/android-msm-pixel-4.19/dist/cam_v4l2_hook.ko fastboot_files/ || true
+          cp -r ./out/android-msm-pixel-4.19/private/msm-google/drivers/camhook/cam_v4l2_hook.ko fastboot_files/ || true
           echo "Creating zip file for fastboot files..."
           cd fastboot_files/
           zip -r "fastboot.zip" .
